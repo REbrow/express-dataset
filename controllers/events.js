@@ -78,17 +78,38 @@ var getByActor = (req, res) => {
 			res.status(404).send();
 		}	
 		else{
-			db.all(`SELECT * FROM events where actorid = ? ;`, [actorid], (err, row)=>{
-				if(err){
-					throw err;
-				}
-				console.log(row);
-				res.status(200).send(row);
-			})
+
+			(async function(){
+				records = await getActorResults(actorid);
+				res.status(200).send(records);
+			})();
 		}
 
 	})
 };
+
+var getActorResults = (id) => {
+	var data = [];
+	return new Promise((resolve,reject)=>{ db.all(`SELECT e.id, e.type, e.created_at, e.actorid, a.login, a.avatar_url,
+		e.repoid, r.name, r.url
+		FROM events e 
+		LEFT JOIN actors a on a.id = e.actorid
+		LEFT JOIN repos r on r.id = e.repoid
+		where e.actorid = ? 
+		;`, [id], (err, rows)=>{
+		if(err){
+			throw err;
+		}
+		rows.forEach((row) =>{
+			data.push( {id: row.id, type: row.type, created_at: row.created_at,
+				actor: {id: row.actorid, login: row.login, avatar_url: row.avatar_url},
+				repo: {id: row.repoid, name: row.name, url: row.url}	
+			});
+		})
+		resolve(data);
+		})
+	});
+}
 
 
 var eraseEvents = (req, res, next) => {
