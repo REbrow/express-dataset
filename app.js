@@ -9,6 +9,7 @@ var index = require('./routes/index');
 var eraseEvents = require('./routes/eraseEvents');
 var events = require('./routes/events');
 var actor = require('./routes/actor');
+var db = require('./database/db')
 
 var app = express();
 
@@ -24,17 +25,46 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
 app.use('/', index);
 app.use('/erase', eraseEvents);
 app.use('/events', events);
 app.use('/actors', actor);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
   next(err);
+});
+
+db.serialize(()=>{
+  let eventsTable = "CREATE TABLE events (id INTEGER PRIMARY KEY, type TEXT, \
+    actorid INTEGER NOT NULL, repoid INTEGER NOT NULL, created_at TIMESTAMP );";
+  let actorsTable = "CREATE TABLE actors (id INTEGER PRIMARY KEY, login TEXT, avatar_url TEXT);";
+  let repoTable = "CREATE TABLE repos (id INTEGER PRIMARY KEY, name TEXT, url TEXT);";
+  
+  
+  db.run(eventsTable, (err)=>{
+      if(err){
+          return console.log(err.message);
+      }
+      console.log('Events Table Created');
+  });
+
+  db.run(actorsTable, (err)=>{
+      if(err){
+          return console.log(err.message);
+      }
+      console.log('ACTORS Table Created');
+  });
+  
+  db.run(repoTable, (err)=>{
+      if(err){
+          return console.log(err.message);
+      }
+      console.log('REPO Table Created');
+  });
 });
 
 // error handler
